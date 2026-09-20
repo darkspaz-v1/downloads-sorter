@@ -2,14 +2,200 @@
   "watch_folder": "%USERPROFILE%\\Downloads",
   "poll_interval_seconds": 4,
   "stability_checks": 2,
-  "ignored_extensions": [".crdownload", ".tmp", ".part", ".download", ".partial"],
-  "skip_names": ["desktop.ini"],
+  "ignored_extensions": [
+    ".crdownload",
+    ".tmp",
+    ".part",
+    ".download",
+    ".partial"
+  ],
+  "skip_names": [
+    "desktop.ini"
+  ],
   "rules": [
-    {"category": "Images", "extensions": [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".heic"]},
-    {"category": "Documents", "extensions": [".pdf", ".doc", ".docx", ".txt", ".md", ".xlsx", ".xls", ".csv", ".ppt", ".pptx", ".odt"]},
-    {"category": "Archives", "extensions": [".zip", ".rar", ".7z", ".tar", ".gz"]},
-    {"category": "Installers", "extensions": [".exe", ".msi"]},
-    {"category": "Videos", "extensions": [".mp4", ".mov", ".avi", ".mkv", ".webm"]},
-    {"category": "Audio", "extensions": [".mp3", ".wav", ".flac", ".m4a"]}
+    {
+      "category": "Images",
+      "extensions": [
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".webp",
+        ".bmp",
+        ".svg",
+        ".heic"
+      ]
+    },
+    {
+      "category": "Documents",
+      "extensions": [
+        ".pdf",
+        ".doc",
+        ".docx",
+        ".txt",
+        ".md",
+        ".xlsx",
+        ".xls",
+        ".csv",
+        ".ppt",
+        ".pptx",
+        ".odt"
+      ]
+    },
+    {
+      "category": "Archives",
+      "extensions": [
+        ".zip",
+        ".rar",
+        ".7z",
+        ".tar",
+        ".gz"
+      ]
+    },
+    {
+      "category": "Installers",
+      "extensions": [
+        ".exe",
+        ".msi"
+      ]
+    },
+    {
+      "category": "Videos",
+      "extensions": [
+        ".mp4",
+        ".mov",
+        ".avi",
+        ".mkv",
+        ".webm"
+      ]
+    },
+    {
+      "category": "Audio",
+      "extensions": [
+        ".mp3",
+        ".wav",
+        ".flac",
+        ".m4a"
+      ]
+    }
+  ],
+  "name_rules": [
+    {
+      "category": "Important",
+      "match_any_extension": true,
+      "keywords": [
+        "important",
+        "urgent",
+        "confidential",
+        "tax",
+        "taxes",
+        "w2",
+        "w-2",
+        "1099",
+        "1098",
+        "irs",
+        "invoice",
+        "receipt",
+        "billing",
+        "refund",
+        "contract",
+        "agreement",
+        "nda",
+        "lease",
+        "mortgage",
+        "deed",
+        "warranty",
+        "insurance",
+        "policy",
+        "claim",
+        "passport",
+        "visa",
+        "license",
+        "licence",
+        "ssn",
+        "birth certificate",
+        "medical",
+        "prescription",
+        "immunization",
+        "vaccine record",
+        "bank",
+        "statement",
+        "paystub",
+        "pay stub",
+        "payslip",
+        "w4",
+        "w-4",
+        "offer letter",
+        "resume",
+        "cv",
+        "legal",
+        "court",
+        "subpoena"
+      ]
+    },
+    {
+      "category": "School",
+      "match_any_extension": true,
+      "keywords": [
+        "school",
+        "class",
+        "classes",
+        "course",
+        "coursework",
+        "semester",
+        "homework",
+        "hw",
+        "assignment",
+        "assignments",
+        "worksheet",
+        "lecture",
+        "lectures",
+        "notes",
+        "syllabus",
+        "textbook",
+        "exam",
+        "midterm",
+        "quiz",
+        "study guide",
+        "studyguide",
+        "review sheet",
+        "lab",
+        "labs",
+        "lab report",
+        "problem set",
+        "pset",
+        "essay",
+        "thesis",
+        "dissertation",
+        "bibliography",
+        "citation",
+        "transcript",
+        "gradebook",
+        "grades",
+        "rubric",
+        "professor",
+        "lecture slides",
+        "tutorial",
+        "umd",
+        "elms",
+        "canvas",
+        "gradescope",
+        "blackboard",
+        "piazza",
+        "chem",
+        "chem135",
+        "math",
+        "phys",
+        "bio",
+        "calc",
+        "stat",
+        "econ",
+        "cmsc"
+      ],
+      "patterns": [
+        " (?:f|fa|fall|sp|spr|spring|su|sum|summer|w|wi|winter) (?:19|2\\d)(?= )",
+        " (?:math|chem|phys|bio|cmsc|econ|stat|engl|hist|psyc|astr|geol) \\d{3}(?= )"
+      ]
+    }
   ]
 }

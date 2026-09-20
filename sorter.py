@@ -1,4 +1,8 @@
+import re
 from pathlib import Path
+
+_NON_ALNUM = re.compile(r"[^a-z0-9]+")
+_LETTER_DIGIT = re.compile(r"(?<=[a-z])(?=[0-9])|(?<=[0-9])(?=[a-z])")
 
 
 def build_extension_map(rules):
@@ -9,9 +13,51 @@ def build_extension_map(rules):
     return ext_to_category
 
 
-def category_for(filename, ext_to_category):
+def normalize(text):
+    """Lowercase, split letter/digit runs apart, turn every run of non-alphanumerics
+    into a single space, and pad with spaces so keyword lookups match whole words
+    only. "CHEM135_HW-3.pdf" stem becomes " chem 135 hw 3 ", so " hw " and " chem "
+    hit while "shwoop" and "classic" don't. Keywords go through the same function,
+    so "w-2" and "pset" match "W2" and "PSET2" respectively."""
+    text = _LETTER_DIGIT.sub(" ", text.lower())
+    return f" {_NON_ALNUM.sub(' ', text).strip()} "
+
+
+def build_name_matchers(name_rules):
+    """[(category, [normalized keyword, ...], [compiled pattern, ...],
+    match_any_extension), ...] in priority order - the first rule that matches a
+    filename wins. Patterns are regexes run against the SAME normalized string the
+    keywords are, so they see " 141 f 26 2 solidsofrev ", not the raw filename."""
+    matchers = []
+    for rule in name_rules or []:
+        keywords = [normalize(k) for k in rule.get("keywords", [])]
+        patterns = [re.compile(p) for p in rule.get("patterns", [])]
+        matchers.append(
+            (
+                rule["category"],
+                keywords,
+                patterns,
+                bool(rule.get("match_any_extension", False)),
+            )
+        )
+    return matchers
+
+
+def category_for(filename, ext_to_category, name_matchers=()):
+    """Keyword rules take precedence over extension rules. A keyword rule only
+    claims a file whose extension is otherwise sortable, unless that rule sets
+    match_any_extension."""
     ext = Path(filename).suffix.lower()
-    return ext_to_category.get(ext)
+    ext_category = ext_to_category.get(ext)
+    haystack = normalize(Path(filename).stem)
+    for category, keywords, patterns, match_any_extension in name_matchers:
+        if ext_category is None and not match_any_extension:
+            continue
+        if any(keyword in haystack for keyword in keywords):
+            return category
+        if any(pattern.search(haystack) for pattern in patterns):
+            return category
+    return ext_category
 
 
 def is_ignored(filename, ignored_extensions, skip_names):
@@ -66,6 +112,7 @@ def find_ready_to_sort(watch_folder, config, tracker):
     `stability_checks` consecutive polls."""
     watch_path = Path(watch_folder)
     ext_to_category = build_extension_map(config["rules"])
+    name_matchers = build_name_matchers(config.get("name_rules", []))
     ignored_extensions = config.get("ignored_extensions", [])
     skip_names = set(config.get("skip_names", []))
 
@@ -81,7 +128,7 @@ def find_ready_to_sort(watch_folder, config, tracker):
             continue
         if is_ignored(entry.name, ignored_extensions, skip_names):
             continue
-        category = category_for(entry.name, ext_to_category)
+        category = category_for(entry.name, ext_to_category, name_matchers)
         if category is None:
             continue
         current_files.append(entry)
