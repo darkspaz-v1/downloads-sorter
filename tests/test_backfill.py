@@ -90,7 +90,6 @@ def test_undo_without_a_log_is_a_noop(log, capsys):
     assert "no backfill log" in capsys.readouterr().out
 
 
-@pytest.mark.xfail(strict=True, reason="bug: undo overwrites a file that reappeared at the original path")
 def test_undo_does_not_overwrite_a_file_that_reappeared_at_the_original_path(tmp_path, log):
     # A new file with the same name was created where the sorted file used to be.
     original = tmp_path / "Documents" / "syllabus.pdf"
@@ -103,6 +102,7 @@ def test_undo_does_not_overwrite_a_file_that_reappeared_at_the_original_path(tmp
     log.write_text(json.dumps(entry) + "\n", encoding="utf-8")
     backfill.undo()
     assert original.read_text() == "new download"
+    assert moved.read_text() == "sorted copy"  # left where it is, not lost
 
 
 def test_backfill_uses_same_rules_as_the_live_sorter(cfg):

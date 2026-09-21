@@ -65,6 +65,10 @@ def undo():
         if not src.exists():
             print(f"  skip (gone) {src.name}")
             continue
+        if dst.exists():
+            # shutil.move would silently overwrite it on Windows - never lose a newer file.
+            print(f"  skip (original path is occupied) {dst.name}")
+            continue
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(src), str(dst))
         restored += 1
