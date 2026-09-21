@@ -4,3 +4,4 @@ __pycache__/
 *.lock
 move_log.jsonl
 backfill_log.jsonl
+logs/
