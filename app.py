@@ -1,4 +1,5 @@
 import json
+import logging
 import msvcrt
 import os
 import shutil
@@ -8,9 +9,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pystray
-from PIL import Image, ImageDraw
 
 from icon import app_icon
+from log_setup import setup_logging
 from sorter import StabilityTracker, find_ready_to_sort
 
 APP_DIR = Path(__file__).parent
@@ -19,6 +20,7 @@ LOCK_PATH = APP_DIR / ".singleton.lock"
 MOVE_LOG_PATH = APP_DIR / "move_log.jsonl"
 MAX_LOG_ENTRIES = 500
 _lock_file = None
+log = logging.getLogger("downloads-sorter")
 
 DEFAULT_CONFIG = {
     "watch_folder": "%USERPROFILE%\\Downloads",
@@ -70,7 +72,9 @@ def log_move(src_name, category, dest):
     if MOVE_LOG_PATH.exists():
         try:
             lines = MOVE_LOG_PATH.read_text(encoding="utf-8").splitlines()
-        except OSError:
+        except OSError as e:
+            # Unreadable log: start a fresh one rather than lose the move being logged.
+            log.warning("could not read move log, starting a new one: %s", e)
             lines = []
     lines.append(json.dumps(entry))
     lines = lines[-MAX_LOG_ENTRIES:]
@@ -94,6 +98,9 @@ class DownloadsSorterApp:
             try:
                 ready = find_ready_to_sort(self.config["watch_folder"], self.config, self.tracker)
             except Exception:
+                # The poller thread must survive anything a scan throws (odd filenames,
+                # permissions, a folder vanishing); skip this cycle and try again.
+                log.exception("scan of %s failed; retrying next poll", self.config["watch_folder"])
                 continue
             for src, dest_dir, dest, category in ready:
                 try:
@@ -102,9 +109,10 @@ class DownloadsSorterApp:
                     self.tracker.forget(src)
                     log_move(src.name, category, dest)
                     self.total_sorted += 1
-                except OSError:
+                except OSError as e:
                     # File may have been removed/renamed/opened elsewhere between the
                     # scan and the move - just skip it, it'll be re-evaluated next poll.
+                    log.warning("could not move %s: %s", src.name, e)
                     continue
             if self.icon:
                 self.icon.title = self._status_text()
@@ -127,8 +135,8 @@ class DownloadsSorterApp:
     def open_watch_folder(self, icon=None, item=None):
         try:
             os.startfile(self.config["watch_folder"])
-        except OSError:
-            pass
+        except OSError as e:
+            log.warning("could not open %s: %s", self.config["watch_folder"], e)
 
     def quit_app(self, icon=None, item=None):
         self._stop.set()
@@ -157,17 +165,19 @@ def main():
         try:
             config = load_config()
             os.startfile(config["watch_folder"])
-        except OSError:
-            pass
+        except OSError as e:
+            log.warning("could not open %s: %s", config["watch_folder"], e)
         return
     app = DownloadsSorterApp()
     app.run()
 
 
 if __name__ == "__main__":
+    setup_logging()
     try:
         main()
     except Exception:
+        log.exception("fatal error")
         import traceback
 
         with open(APP_DIR / "app_error.log", "a", encoding="utf-8") as f:

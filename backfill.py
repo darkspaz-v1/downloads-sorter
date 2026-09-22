@@ -54,7 +54,7 @@ def undo():
     if not LOG_PATH.exists():
         print("no backfill log to undo")
         return
-    entries = [json.loads(l) for l in LOG_PATH.read_text(encoding="utf-8").splitlines() if l]
+    entries = [json.loads(line) for line in LOG_PATH.read_text(encoding="utf-8").splitlines() if line]
     if not entries:
         print("no backfill log to undo")
         return
@@ -65,10 +65,32 @@ def undo():
         if not src.exists():
             print(f"  skip (gone) {src.name}")
             continue
+        if dst.exists():
+            # shutil.move would silently overwrite it on Windows - never lose a newer file.
+            print(f"  skip (original path is occupied) {dst.name}")
+            continue
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(src), str(dst))
         restored += 1
     print(f"restored {restored} file(s) from run {last_run}")
+
+
+def execute(moves, run_id, dry=False):
+    """Perform (or, with dry=True, only print) the planned moves. Returns the
+    log entries for the moves that actually happened."""
+    done = []
+    for src, dest, from_cat, to_cat in moves:
+        print(f"  {from_cat:<11} -> {to_cat:<10} {src.name}")
+        if dry:
+            continue
+        try:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(src), str(dest))
+            done.append({"run": run_id, "from": str(src), "to": str(dest),
+                         "from_category": from_cat, "to_category": to_cat})
+        except OSError as err:
+            print(f"    ! skipped: {err}")
+    return done
 
 
 def main():
@@ -84,18 +106,7 @@ def main():
         return
 
     run_id = datetime.now(timezone.utc).isoformat()
-    done = []
-    for src, dest, from_cat, to_cat in moves:
-        print(f"  {from_cat:<11} -> {to_cat:<10} {src.name}")
-        if dry:
-            continue
-        try:
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(str(src), str(dest))
-            done.append({"run": run_id, "from": str(src), "to": str(dest),
-                         "from_category": from_cat, "to_category": to_cat})
-        except OSError as err:
-            print(f"    ! skipped: {err}")
+    done = execute(moves, run_id, dry=dry)
 
     if dry:
         print(f"\n[dry run] {len(moves)} file(s) would move")
