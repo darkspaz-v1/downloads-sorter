@@ -4,6 +4,43 @@
 
 Keeps the Downloads folder from turning into a junk drawer, without any interaction.
 
+### Example (illustrative — not real files)
+
+A Downloads folder before the sorter runs:
+
+```
+Downloads/
+├── fake-report.pdf
+├── fake-photo.jpg
+├── fake-installer.exe
+├── fake-archive.zip
+├── fake-mix.mp3
+└── fake-demo.mp4
+```
+
+The same folder after sorting:
+
+```
+Downloads/
+├── Documents/
+│   └── fake-report.pdf
+├── Images/
+│   └── fake-photo.jpg
+├── Installers/
+│   └── fake-installer.exe
+├── Archives/
+│   └── fake-archive.zip
+├── Audio/
+│   └── fake-mix.mp3
+├── Videos/
+│   └── fake-demo.mp4
+└── move_log.jsonl
+```
+
+The filenames above are made up for illustration — the tool never touches, reads, or uploads the
+contents of your real files, it only moves them by extension (and optionally by filename keyword;
+see `config.json`).
+
 ## How it works
 
 - Tray-only. There is no main window by design.
@@ -36,7 +73,7 @@ framework — the only thing they share is a set of conventions.
 | Config lives in `config.json`, read at startup | Edit it, then fully exit the tray icon and relaunch — a running process never re-reads it |
 | Tray icon generated in code (`icon.py`) | No binary asset to keep in sync |
 
-## Install and run
+## Quick start
 
 ```
 python -m venv venv
@@ -56,6 +93,16 @@ venv\Scripts\python -m ruff check .
 ```
 
 The tests cover the pure logic (type-folder mapping, whole-word School/Important rules, semester and course patterns, stable-file detection, backfill and its undo) against temporary folders. They never start the tray icon or touch your real Downloads folder.
+
+## Known limitations
+
+- **Windows only.** The tray icon, single-instance lock and folder watching all use Win32 APIs;
+  there's no macOS/Linux support.
+- **Waits for a file's size to stop changing before moving it.** A browser writes a partial file the
+  moment a download starts, so moving on creation would relocate (and for some browsers, break) a
+  half-downloaded file. The sorter only acts once a file's size is stable across polls.
+- **`backfill.py --undo` only reverses the most recent backfill run.** There's no multi-run undo
+  history — running `--undo` after several backfills only rolls back the last one.
 
 ## Troubleshooting: log file location
 
