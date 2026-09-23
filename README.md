@@ -4,6 +4,8 @@
 
 Keeps the Downloads folder from turning into a junk drawer, without any interaction.
 
+![Downloads Sorter preview](docs/images/downloads-sorter-preview.png)
+
 ### Example (illustrative — not real files)
 
 A Downloads folder before the sorter runs:
